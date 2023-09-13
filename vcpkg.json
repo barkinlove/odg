@@ -1,0 +1,11 @@
+{
+  "name": "pur",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "nlohmann-json",
+    "sdl2",
+    "spdlog",
+    "glew",
+    "glm"
+  ]
+}
