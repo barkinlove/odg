@@ -1,6 +1,10 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_opengl.h>
+
+#include <SDL_timer.h>
+#include <spdlog/spdlog.h>
 
 #include "Config.hxx"
 #include "Game.hxx"
@@ -8,6 +12,8 @@
 #include "Renderer.hxx"
 #include "Shader.hxx"
 #include "ShaderFactory.hxx"
+#include <SDL_events.h>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <glm/ext/matrix_transform.hpp>
@@ -71,6 +77,8 @@ GLuint gen_ibo()
   return ibo;
 }
 
+static uint32_t s_lastFrameTime = 0;
+
 void Renderer::render()
 {
   std::vector<glm::vec3> verticies = { { -1.f, -1.f, 0.f },
@@ -82,23 +90,14 @@ void Renderer::render()
 
   auto model = glm::scale(glm::identity<glm::mat4x4>(), { 0.5f, 0.5f, 0.5f });
   model = glm::rotate(model, std::sin(g_scale), { 1.f, 0.f, 0.f });
-  // model = glm::rotate(model, std::sin(g_scale), { 0.f, 1.f, 0.f });
-  // model = glm::rotate(model, std::sin(g_scale), { 0.f, 0.f, 1.f });
-  // model = glm::translate(model, { std::sin(g_scale), std::sin(g_scale), 0.f
-  // });
 
-  // glm::vec3 cameraPos{ 0.f, 0.f, -3.f };
-  // glm::vec3 cameraTarget{ 0.f, 5.f, 0.f };
-  // // this camera is left-handed for some reason. figure out the cause later
-  // glm::vec3 direction = glm::normalize(cameraPos - cameraTarget);
-  // glm::vec3 up{ 0.f, 1.f, 0.f };
-  // glm::vec3 cameraRight = glm::normalize(glm::cross(up, direction));
-  // glm::vec3 cameraUp = glm::normalize(glm::cross(direction, cameraRight));
-  // glm::mat4x4 view = glm::lookAt(cameraPos, cameraUp, direction);
-  // note that we're translating the scene in the reverse direction of where we
-  // want to move
-  glm::mat4x4 view =
-    glm::translate(glm::identity<glm::mat4x4>(), glm::vec3(0.0f, 0.0f, -3.0f));
+  Camera& cam = m_game.get_camera();
+
+  uint32_t timeDelta = SDL_GetTicks() - s_lastFrameTime;
+  s_lastFrameTime = SDL_GetTicks();
+  cam.set_acceleration(timeDelta);
+
+  glm::mat4x4 view = cam.get_view();
 
   glm::mat4x4 projection =
     glm::perspective(glm::radians(45.f),
@@ -128,6 +127,43 @@ void Renderer::render()
   glDisableVertexAttribArray(0);
 }
 
+void handleInput(Game& game, const SDL_KeyboardEvent& event)
+{
+  std::string_view key = SDL_GetKeyName(event.keysym.sym);
+  Camera& cam = game.get_camera();
+  if (key == "W") {
+    cam.move_forward();
+  }
+
+  if (key == "A") {
+    cam.move_left();
+  }
+
+  if (key == "D") {
+    cam.move_right();
+  }
+
+  if (key == "S") {
+    cam.move_backward();
+  }
+
+  if (key == "Up") {
+    cam.increase_pitch();
+  }
+
+  if (key == "Down") {
+    cam.decrease_pitch();
+  }
+
+  if (key == "Left") {
+    cam.decrease_yaw();
+  }
+
+  if (key == "Right") {
+    cam.incraese_yaw();
+  }
+}
+
 void Renderer::main_loop()
 {
   // wanna keep init here in order to be able to obtain window instance
@@ -137,9 +173,13 @@ void Renderer::main_loop()
   SDL_Event e;
   while (!quit) {
     while (SDL_PollEvent(&e)) {
-      if (e.type == SDL_QUIT)
+      if (e.type == SDL_QUIT) {
         quit = true;
+      } else if (e.type == SDL_KEYDOWN) {
+        handleInput(m_game, e.key);
+      }
     }
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     render();
     SDL_GL_SwapWindow(m_game.get_window().get_underlying());

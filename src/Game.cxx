@@ -38,3 +38,8 @@ Game& Game::instance()
   static Game s_game;
   return s_game;
 }
+
+Camera& Game::get_camera() noexcept
+{
+  return m_camera;
+}

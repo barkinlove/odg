@@ -31,6 +31,7 @@ add_executable(
   ${PROJECT_SOURCE_DIR}/src/Config.cxx
   ${PROJECT_SOURCE_DIR}/src/Math.cxx
   ${PROJECT_SOURCE_DIR}/src/Object.cxx
+  ${PROJECT_SOURCE_DIR}/src/Camera.cxx
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE

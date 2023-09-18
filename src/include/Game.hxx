@@ -1,4 +1,5 @@
 #pragma once
+#include "Camera.hxx"
 #include "Renderer.hxx"
 #include "Window.hxx"
 
@@ -11,6 +12,7 @@ public:
   static Game& instance();
 
   const Window& get_window() const noexcept;
+  Camera& get_camera() noexcept;
 
   void run();
 
@@ -21,6 +23,7 @@ private:
   void draw_scene();
 
 private:
+  Camera m_camera;
   Window m_window;
   Renderer m_renderer;
 };
