@@ -13,9 +13,9 @@ class Shader
   friend class ShaderFactory;
 
 public:
-  std::string_view get_name() const noexcept { return m_name; }
-  std::string_view get_src() const noexcept { return m_src; }
-  GLuint get_object() const noexcept { return m_object; };
+  std::string_view get_name() const noexcept;
+  std::string_view get_src() const noexcept;
+  GLuint get_object() const noexcept;
 
 private:
   Shader(const GLuint type,

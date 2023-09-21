@@ -17,6 +17,7 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 message("${CMAKE_BINARY_DIR}")
 
@@ -32,6 +33,8 @@ add_executable(
   ${PROJECT_SOURCE_DIR}/src/Math.cxx
   ${PROJECT_SOURCE_DIR}/src/Object.cxx
   ${PROJECT_SOURCE_DIR}/src/Camera.cxx
+  ${PROJECT_SOURCE_DIR}/src/Loader.cxx
+  ${PROJECT_SOURCE_DIR}/src/Mesh.cxx
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -53,4 +56,5 @@ target_link_libraries(
   spdlog::spdlog spdlog::spdlog_header_only
   GLEW::GLEW
   glm::glm
+  assimp::assimp
 )

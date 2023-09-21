@@ -6,6 +6,7 @@
     "sdl2",
     "spdlog",
     "glew",
-    "glm"
+    "glm",
+    "assimp"
   ]
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "Model.hxx"
 #include "Shader.hxx"
 #include <SDL_video.h>
 #include <filesystem>
@@ -30,4 +31,7 @@ private:
   SDL_GLContext m_glContext;
   std::vector<Shader> m_shaders;
   GLuint m_shaderProgram;
+
+  // make them object later
+  std::vector<Model> m_models;
 };

@@ -1,18 +1,17 @@
 #include <GL/glew.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_opengl.h>
-
-#include <SDL_timer.h>
-#include <spdlog/spdlog.h>
 
 #include "Config.hxx"
 #include "Game.hxx"
+#include "Loader.hxx"
 #include "Object.hxx"
 #include "Renderer.hxx"
 #include "Shader.hxx"
 #include "ShaderFactory.hxx"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_opengl.h>
 #include <SDL_events.h>
+#include <SDL_timer.h>
 #include <cctype>
 #include <filesystem>
 #include <fstream>
@@ -26,7 +25,8 @@
 #include <set>
 #include <spdlog/spdlog.h>
 
-// consider changing the way of obtaining game
+#include <iostream>
+
 Renderer::Renderer(Game& game)
   : m_game(game)
 {
@@ -48,47 +48,15 @@ void Renderer::init_shaders()
   }
 }
 
-static std::vector<glm::vec3> verticies = {
-  { -1.f, -1.f, 0.f },
-  { 0.f, -1.f, 1.f },
-  { 1.f, -1.f, 0.f },
-  { 0.f, 1.f, 0.f },
-};
-
-GLuint gen_vbo()
-{
-  GLuint vbo;
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  size_t size = sizeof(float) * verticies.size() * glm::vec3::length();
-  glBufferData(GL_ARRAY_BUFFER, size, verticies.data(), GL_STATIC_DRAW);
-  return vbo;
-}
-
-static std::vector<uint32_t> indicies = { 0, 3, 1, 1, 3, 2, 2, 3, 0, 0, 1, 2 };
-
-GLuint gen_ibo()
-{
-  GLuint ibo;
-  glGenBuffers(1, &ibo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-  size_t size = sizeof(uint32_t) * indicies.size();
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indicies.data(), GL_STATIC_DRAW);
-  return ibo;
-}
-
 static uint32_t s_lastFrameTime = 0;
 
 void Renderer::render()
 {
-  std::vector<glm::vec3> verticies = { { -1.f, -1.f, 0.f },
-                                       { 1.f, -1.f, 0.f },
-                                       { 0.0f, 1.f, 0.0f } };
-  // VBO stands for vertex buffer object
   static float g_scale = 0.f;
   g_scale += 0.01f;
 
   auto model = glm::scale(glm::identity<glm::mat4x4>(), { 0.5f, 0.5f, 0.5f });
+  model = glm::rotate(model, std::sin(g_scale), { 0.f, 0.f, 1.f });
   model = glm::rotate(model, std::sin(g_scale), { 1.f, 0.f, 0.f });
 
   Camera& cam = m_game.get_camera();
@@ -115,16 +83,13 @@ void Renderer::render()
   glUniformMatrix4fv(
     projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
-  GLuint vbo = gen_vbo();
-  GLuint ibo = gen_ibo();
+  const Model& renderModel = m_models[0];
 
-  glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-  glDrawElements(GL_TRIANGLES, indicies.size(), GL_UNSIGNED_INT, 0);
-  glDisableVertexAttribArray(0);
+  for (const auto& mesh : renderModel.meshes) {
+    glBindVertexArray(mesh.get_vao());
+    glDrawElements(GL_TRIANGLES, mesh.get_indices().size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+  }
 }
 
 void handleInput(Game& game, const SDL_KeyboardEvent& event)
@@ -204,8 +169,11 @@ void Renderer::init()
     spdlog::warn("unable to enable vsync. reason: {}", SDL_GetError());
   }
   glClearColor(0.f, 0.f, 0.f, 1.f);
+  glEnable(GL_DEPTH_TEST);
 
   init_shaders();
+  std::string_view modelPath = "path/to/monkey";
+  m_models.push_back(Loader::load_model(modelPath));
 }
 
 static constexpr std::array<std::string_view, 2> s_allowedShaderExtensions = {
